@@ -5,27 +5,20 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Mattia Pasquini">
-
     
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
     
-
-    <script src="script.js"></script>
-    <title>Register - Chat</title>
-
     
+    <title>Login - Chat</title>
 
    </head>
 <body>
-    <h1>Register</h1>
+    
 
-    <label>Name</label><br>
-    <input type="text" id="name" name="name">
-
-    <br><br>
-
+    <div id="login-section">
+    <h1>Login</h1>
     <label>Email</label><br>
     <input type="email" id="email" name="email">
 
@@ -36,11 +29,23 @@
 
     <br><br>
 
-    <button onclick="registerUser()">Register</button>
+    <button onclick="loginUser()">Login</button>
     
     <br><br>
-    <label>Do you have an account?</label> <a href="login.html">Login</a>
+    <label>Don't you have an account?</label> <a href="./register.html">Register</a>
+    </div>
 
-    
+    <div id="chat-section" style="display: none;">
+        <!-- messages will display here -->
+        <ul id="messages"></ul>
+  
+        <!-- form to send message -->
+        <form id="message-form">
+          <input id="message-input" type="text" />
+          <button id="message-btn" type="submit">Send</button>
+        </form>
+    </div>
+
+    <script  src="./script.js"></script>
 </body>
 </html>

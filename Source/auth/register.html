@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Mattia Pasquini">
+
+    
+    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+
+    <title>Register - Chat</title>
+
+    
+
+   </head>
+<body>
+    <h1>Register</h1>
+
+    <label>Name</label><br>
+    <input type="text" id="name" name="name">
+
+    <br><br>
+
+    <label>Email</label><br>
+    <input type="email" id="email" name="email">
+
+    <br><br>
+
+    <label>Password</label><br>
+    <input type="password" id="password" name="password">
+
+    <br><br>
+
+    <button onclick="registerUser()">Register</button>
+    
+    <br><br>
+    <label>Do you have an account?</label> <a href="login.html">Login</a>
+
+    <script  src="./script.js"></script>
+</body>
+</html>
