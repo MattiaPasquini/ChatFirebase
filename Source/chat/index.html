@@ -15,28 +15,54 @@
 
    </head>
 <body>
-    
+    <div id="header-section">
+        <h1>Chat with Firebase</h1>
+        <button name="admin-mode" onclick="channelSection()" style="display: none;">Create a channel</button>
+        <!--
+        <button name="admin-mode" onclick="" style="display: none;">Logout</button>
+        -->    
+    </div>
 
     <div id="login-section">
-    <h1>Login</h1>
-    <label>Email</label><br>
-    <input type="email" id="email" name="email">
+        <h3>Login</h3>
+        <label>Email</label><br>
+        <input type="email" id="email" name="email">
 
-    <br><br>
+        <br><br>
 
-    <label>Password</label><br>
-    <input type="password" id="password" name="password">
+        <label>Password</label><br>
+        <input type="password" id="password" name="password">
 
-    <br><br>
+        <br><br>
 
-    <button onclick="loginUser()">Login</button>
+        <button onclick="loginUser()">Login</button>
     
-    <br><br>
-    <label>Don't you have an account?</label> <a href="./register.html">Register</a>
+        <br><br>
+        <label>Don't you have an account?</label> <a href="./register.html">Register</a>
+    </div>
+
+    
+
+    <div id="createchannel-section" style="display: none;">
+        <h3>Create a channel</h3>
+        <label>Name: </label>
+        <input id="name-channel">
+        <br><br>
+        Users:
+        <div id="list-user">
+
+        </div>
+        <br>
+        <button onclick="createChannel()">Crea canale</button>
+    </div>
+
+    <div id="channels-section">
+        <ul id="channels"></ul>
     </div>
 
     <div id="chat-section" style="display: none;">
         <!-- messages will display here -->
+        
         <ul id="messages"></ul>
   
         <!-- form to send message -->
