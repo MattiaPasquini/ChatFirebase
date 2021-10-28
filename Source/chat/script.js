@@ -43,7 +43,7 @@ function registerUser(){
     });
 }
 
-var currentUser;
+var currentUser = null;
 
 function loginUser(){
     var email = document.getElementById("email").value;
@@ -101,7 +101,7 @@ function sendMessage(e){
   
     // create db collection and send in the data
     db.ref("messages/" + timestamp).set({
-      username: currentUser,
+      name: currentUser,
       message: message,
     });
 }
@@ -111,8 +111,8 @@ console.log(currentUser);
 db.ref('messages/').on("child_added", function (snapshot) {
   const messages = snapshot.val();
   const message = `<li class=${
-    username === messages.username ? "sent" : "receive"
-  }><span>${messages.username}: </span>${messages.message}</li>`;
+    currentUser === messages.name ? "sent" : "receive"
+  }><span>${messages.name}: </span>${messages.message}</li>`;
   // append the message on the page
   document.getElementById("messages").innerHTML += message;
 });
