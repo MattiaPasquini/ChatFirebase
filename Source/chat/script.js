@@ -170,7 +170,7 @@ function createChannelSection(){
 }
 
 
-var isCreating = false;
+var addedAllListener = false;
 function createChannel(){
     var nameChannel = document.getElementById("name-channel").value;
 
@@ -187,13 +187,17 @@ function createChannel(){
             usersSelected.push(input.id);
         }
     });
-    
-    isCreating = true;
 
     db.ref('channels/' + nameChannel).set({
         name: nameChannel,
         users: usersSelected,
     });
+
+    const aChannel = `<li><a onclick="selectChannel('${nameChannel}')">${nameChannel}</a></li>`;
+    document.getElementById("channels").innerHTML += aChannel;
+
+    const divSection = `<ul id="${nameChannel}" style="display: none"></ul>`;
+    document.getElementById("channelschat-section").innerHTML += divSection;
 
     //crea un nuovo "Listener" per il gruppo appena creato
     db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
@@ -229,7 +233,7 @@ function exitCreateChannel(){
                   users: (2) ['user1', 'user2']
 */
 function showChannels(){
-    db.ref('channels/').on("value", (snapshot) => {
+    db.ref('channels/').once("value", (snapshot) => {
         document.getElementById("channels").innerHTML = "";
         channels = Object.entries(snapshot.val());
 
@@ -243,7 +247,7 @@ function showChannels(){
                     const divSection = `<ul id="${channel[1].name}" style="display: none"></ul>`;
                     document.getElementById("channelschat-section").innerHTML += divSection;
                     
-                    if(isCreating){
+                    //if(!addedAllListener){
                         const nameChannel = channel[1].name;
                         //crea un listener, che poi ogni volta che viene aggiunto un messaggio viene eseguito
                         db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
@@ -259,9 +263,10 @@ function showChannels(){
                             console.log(nameChannel);
                             document.getElementById(nameChannel).innerHTML += message;
                         });
+                        //addedAllListener = true;
                     }
-                    isCreating = false;
-                }
+                    
+                //}
             }
         }
     });
