@@ -17,8 +17,12 @@
 <body>
     <div id="header-section">
         <h1>Chat with Firebase</h1>
-        <button name="admin-mode" onclick="channelSection()" style="display: none;">Create a channel</button>
+        <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
+        
         <!--
+        <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
+        <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
+        <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
         <button name="admin-mode" onclick="" style="display: none;">Logout</button>
         -->    
     </div>
@@ -41,9 +45,8 @@
         <label>Don't you have an account?</label> <a href="./register.html">Register</a>
     </div>
 
-    
-
     <div id="createchannel-section" style="display: none;">
+        <button onclick="exitCreateChannel()">Back</button>
         <h3>Create a channel</h3>
         <label>Name: </label>
         <input id="name-channel">
@@ -56,22 +59,27 @@
         <button onclick="createChannel()">Crea canale</button>
     </div>
 
-    <div id="channels-section">
-        <ul id="channels"></ul>
-    </div>
-
-    <div id="chat-section" style="display: none;">
-        <!-- messages will display here -->
+    <div id="principal-section">
+        <div id="channel-section" style="display: block;">
+            <ul id="channels"></ul>
+        </div>
         
-        <ul id="messages"></ul>
-  
-        <!-- form to send message -->
-        <form id="message-form">
-          <input id="message-input" type="text" />
-          <button id="message-btn" type="submit">Send</button>
-        </form>
+        <div id="chat-section" style="display: none;">
+            <!-- messages will display here -->
+            <div id="channelschat-section">
+                
+            </div>
+            
+          
+            <!-- form to send message -->
+            <form id="message-form">
+              <input id="message-input" type="text" />
+              <button id="message-btn" type="submit">Send</button>
+            </form>
+        </div>
     </div>
-
+    
+    
     <script  src="./script.js"></script>
 </body>
 </html>

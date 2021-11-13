@@ -1,75 +1,75 @@
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCeNUoQTugxpUtwBY05z0bneqa4fRSMm94",
-  authDomain: "chat-d9ed7.firebaseapp.com",
-  databaseURL: "https://chat-d9ed7-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "chat-d9ed7",
-  storageBucket: "chat-d9ed7.appspot.com",
-  messagingSenderId: "1017316498618",
-  appId: "1:1017316498618:web:8d82c647cf37d8e142f683"
+    apiKey: "AIzaSyCeNUoQTugxpUtwBY05z0bneqa4fRSMm94",
+    authDomain: "chat-d9ed7.firebaseapp.com",
+    databaseURL: "https://chat-d9ed7-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "chat-d9ed7",
+    storageBucket: "chat-d9ed7.appspot.com",
+    messagingSenderId: "1017316498618",
+    appId: "1:1017316498618:web:8d82c647cf37d8e142f683"
 };
-
+  
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
-
+  
 // Initialize database
 const db = firebase.database();
+  
+//variabili globali
+var currentUser = null;
+var currentChannel = null;
 
 //#region metodi helper
 function checkName(name){
-  db.ref('users/').on('value', (snapshot)=>{
-    var listUsers = [];
-    snapshot.forEach((item) =>{
-      var itemVal = item.val();
-      listUsers.push(itemVal);
-    })
-    //console.log(listUsers);
-    for(element of listUsers){
-      if(element[`username`]==name){
-        console.log("name already exists");
-        return false;
-      }
-    }
-  });
+    db.ref('users/').once('value', (snapshot)=>{
+        var listUsers = [];
+        snapshot.forEach((item) =>{
+            var itemVal = item.val();
+            listUsers.push(itemVal);
+        })
+        //console.log(listUsers);
+        for(element of listUsers){
+            if(element[`username`]==name){
+                console.log("name already exists");
+                return false;
+            }
+        }
+    });
   return true;
 }
 //#endregion
 
 //#region autenticazione
-
+  
 function registerUser(){
-    //console.log("cia");
     var name = document.getElementById("name").value;
     var email = document.getElementById("email").value;
     var password = document.getElementById("password").value;
 
     //i nomi devono essere univoci
     if(checkName(name)){
-      firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        //Signed in
-        const user = userCredential.user;
-        var uid = user.uid;
-        db.ref('users/' + uid).set({
-            userId: uid,
-            username: name,
-            email: email,
-            isAdmin: false
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            //Signed in
+            const user = userCredential.user;
+            var uid = user.uid;
+            db.ref('users/' + uid).set({
+                userId: uid,
+                username: name,
+                email: email,
+                isAdmin: false
+            })
+            console.log(user);
         })
-        console.log(user);
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorMessage);
-      });
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(errorMessage);
+        });
     }
-    //Email e nome saranno univoci
-    
 }
-
-var currentUser = null;
-
+  
+  
 function loginUser(){
     var email = document.getElementById("email").value;
     var password = document.getElementById("password").value;
@@ -77,148 +77,212 @@ function loginUser(){
     firebase.auth().signInWithEmailAndPassword(email, password)
     .then((userCredential) => {
 
-    // Signed in
-    db.ref('users/' + userCredential.user.uid).on("value", (snapshot)=>{
-      currentUser = snapshot.val().username;
-      console.log(currentUser);
+        // Signed in
+        db.ref('users/' + userCredential.user.uid).once("value", (snapshot)=>{
+            currentUser = snapshot.val().username;
+            console.log(currentUser);
 
-      if(snapshot.val().isAdmin){
-        var ad = document.getElementsByName("admin-mode");
-        for(element of ad){
-          element.style.display = "block";
-        }
-      }
-    })
-    var user = userCredential.user;
-    console.log(user);
-    console.log(currentUser);
+            if(snapshot.val().isAdmin){
+                var ad = document.getElementsByName("admin-mode");
+                for(element of ad){
+                    element.style.display = "block";
+                }
+            }
+        })
+        var user = userCredential.user;
+        console.log(user);
+        console.log(currentUser);
     
-    document.getElementById("chat-section").style.display = "block";
-    document.getElementById("login-section").style.display = "none";
-    // ...
-    chat();
-    showChannels();
-  })
-  .catch((error) => {
-    var errorCode = error.code;
-    var errorMessage = error.message;
-    console.log(errorMessage);
-  });
-  
-  
+        document.getElementById("login-section").style.display = "none";
+        document.getElementById("principal-section").style.display = "block";
+        //document.getElementById("chat-section").style.display = "block";
+        // ...
+        showChannels();
+    })
+    .catch((error) => {
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        console.log(errorMessage);
+    });
 }
 //#endregion
-
+  
 //#region invio e recezione messaggi
-
+  
 //evento in ascolto nel bottone invio del messaggio e 
 //quando triggera invoca metodo sendMessage
 var a = document.getElementById("message-form")
 if(a){addEventListener("submit", sendMessage);}
-
+  
 function sendMessage(e){
     e.preventDefault();
-
+  
+      
     // get values to be submitted
     const timestamp = Date.now();
     const messageInput = document.getElementById("message-input");
     const message = messageInput.value;
-  
+    if(message == ""){
+        return;
+    }
     // clear the input box
     messageInput.value = "";
-  
+    
     //auto scroll to bottom
     document
-      .getElementById("messages")
-      .scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
-  
+        .getElementById(currentChannel)
+        .scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    
     // create db collection and send in the data
-    db.ref("messages/" + timestamp).set({
-      name: currentUser,
-      message: message,
+    var channelMessage = `channels/${currentChannel}/messages/`;
+    db.ref(channelMessage + timestamp).set({
+        name: currentUser,
+        message: message,
+    });
+}
+  
+//#endregion
+  
+//#region Canali
+  
+function createChannelSection(){
+    document.getElementById("list-user").innerHTML = "";
+  
+    document.getElementById("principal-section").style.display = "none";
+    document.getElementById("createchannel-section").style.display = "block";
+    
+    db.ref('users/').on('value', (snapshot)=>{
+        var listUsers = [];
+        snapshot.forEach((item) =>{
+            var itemVal = item.val();
+            listUsers.push(itemVal);
+        })
+
+        //console.log(listUsers);
+        for(element of listUsers){
+            //console.log(element[`username`]);
+            var aUser = `<input type="checkbox" name="user" id="${element[`username`]}" value="${element[`username`]}"><label for="${element[`username`]}">${element[`username`]}</label><br>`;
+        
+            //console.log(aUser);
+            document.getElementById("list-user").innerHTML += aUser;
+        }
     });
 }
 
-//se ci sono nuovi messaggi, vengono aggiunto
-function chat(){
-  console.log(currentUser);
-db.ref('messages/').on("child_added", function (snapshot) {
-  const messages = snapshot.val();
-  const message = `<li class=${
-    currentUser === messages.name ? "sent" : "receive"
-  }><span>${messages.name}: </span>${messages.message}</li>`;
-  // append the message on the page
-  document.getElementById("messages").innerHTML += message;
-});
-}
 
-//#endregion
-
-//#region Canali
-
-function channelSection(){
-  document.getElementById("list-user").innerHTML = "";
-  document.getElementById("chat-section").style.display = "none";
-  document.getElementById("createchannel-section").style.display = "block";
-  
-  db.ref('users/').on('value', (snapshot)=>{
-    var listUsers = [];
-    snapshot.forEach((item) =>{
-      var itemVal = item.val();
-      listUsers.push(itemVal);
-    })
-    //console.log(listUsers);
-    for(element of listUsers){
-      console.log(element[`username`]);
-      var aUser = `<input type="checkbox" name="user" id="${element[`username`]}" value="${element[`username`]}"><label for="${element[`username`]}">${element[`username`]}</label><br>`;
-      
-        console.log(aUser);
-      document.getElementById("list-user").innerHTML += aUser;
-    }
-  });
-  
-}
-
+var isCreating = false;
 function createChannel(){
-  var nameChannel = document.getElementById("name-channel").value;
-  if(nameChannel === ''){
-    return false; 
-  }
-  
-  //inserisci gli utenti selezionati nell'array
-  usersSelected = [];
-  var users = document.getElementById("list-user").children;
-  Array.from(users).forEach(input =>{
-    if(input.checked){
-      usersSelected.push(input.id);
+    var nameChannel = document.getElementById("name-channel").value;
+
+    if(nameChannel === ''){
+        return false; 
     }
-  });
-
-  db.ref('channels/' + nameChannel).set({
-    name: nameChannel,
-    users: usersSelected,
-  });
-
-  document.getElementById("createchannel-section").style.display = "none";
-  document.getElementById("chat-section").style.display = "block";
-}
-
-
-//da finire
-function showChannels(){
-  db.ref('channels/').on("child_added", function (snapshot) {
-    const channels = Object.entries(snapshot.val());
-    for(elements of channels){
-
-      for(user of elements.users){
-        if(currentUser == user){
-          const channel = `<li><span>${element.name}</span></li>`;
-          document.getElementById("channels").innerHTML += channel;
+    
+    //inserisci gli utenti selezionati nell'array
+    usersSelected = [];
+    var users = document.getElementById("list-user").children;
+    
+    Array.from(users).forEach(input =>{
+        if(input.checked){
+            usersSelected.push(input.id);
         }
-      }
-    }
-  });
+    });
+    
+    isCreating = true;
+
+    db.ref('channels/' + nameChannel).set({
+        name: nameChannel,
+        users: usersSelected,
+    });
+
+    //crea un nuovo "Listener" per il gruppo appena creato
+    db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
+              
+        const messages = snapshot.val();
+        const message = `<li class=${
+            currentUser === messages.name ? "sent" : "receive"
+        }><span>${messages.name}: </span>${messages.message}</li>`;
+
+        console.log("inserito un messaggio");
+        // append the message on the page
+
+        console.log(nameChannel);
+        document.getElementById(nameChannel).innerHTML += message;
+    });
+    exitCreateChannel();
+
 }
+
+
+function exitCreateChannel(){
+    document.getElementById("createchannel-section").style.display = "none";
+    document.getElementById("principal-section").style.display = "block";
+}
+  
+  
+/* 
+    channels = Object.entries(snapshot.val());
+    output => 0: Array(2)
+                0: "gruppo1"
+                1:
+                  name: "gruppo1"
+                  users: (2) ['user1', 'user2']
+*/
+function showChannels(){
+    db.ref('channels/').on("value", (snapshot) => {
+        document.getElementById("channels").innerHTML = "";
+        channels = Object.entries(snapshot.val());
+
+        for(channel of channels){
+            for(user of channel[1].users){
+                if(currentUser == user){
+
+                    const aChannel = `<li><a onclick="selectChannel('${channel[1].name}')">${channel[1].name}</a></li>`;
+                    document.getElementById("channels").innerHTML += aChannel;
+
+                    const divSection = `<ul id="${channel[1].name}" style="display: none"></ul>`;
+                    document.getElementById("channelschat-section").innerHTML += divSection;
+                    
+                    if(isCreating){
+                        const nameChannel = channel[1].name;
+                        //crea un listener, che poi ogni volta che viene aggiunto un messaggio viene eseguito
+                        db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
+              
+                            const messages = snapshot.val();
+                            const message = `<li class=${
+                                currentUser === messages.name ? "sent" : "receive"
+                            }><span>${messages.name}: </span>${messages.message}</li>`;
+
+                            console.log("inserito un messaggio");
+                            // append the message on the page
+
+                            console.log(nameChannel);
+                            document.getElementById(nameChannel).innerHTML += message;
+                        });
+                    }
+                    isCreating = false;
+                }
+            }
+        }
+    });
+}
+ 
+
+function selectChannel(channel){
+    if(currentChannel == channel){
+        return;
+    }else{
+        if(currentChannel != null){
+            document.getElementById(currentChannel).style.display = "none";
+        }
+    }
+    document.getElementById("chat-section").style.display = "block";
+    currentChannel = channel;
+    document.getElementById(currentChannel).style.display = "block";
+} 
+  
 
 //#endregion
 
+//#region comandi per amministratori
+//#endregion
