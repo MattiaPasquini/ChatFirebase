@@ -98,6 +98,7 @@ function loginUser(){
         //document.getElementById("chat-section").style.display = "block";
         // ...
         showChannels();
+        //addAllListeners();
     })
     .catch((error) => {
         var errorCode = error.code;
@@ -170,7 +171,7 @@ function createChannelSection(){
 }
 
 
-var addedAllListener = false;
+
 function createChannel(){
     var nameChannel = document.getElementById("name-channel").value;
 
@@ -193,26 +194,7 @@ function createChannel(){
         users: usersSelected,
     });
 
-    const aChannel = `<li><a onclick="selectChannel('${nameChannel}')">${nameChannel}</a></li>`;
-    document.getElementById("channels").innerHTML += aChannel;
-
-    const divSection = `<ul id="${nameChannel}" style="display: none"></ul>`;
-    document.getElementById("channelschat-section").innerHTML += divSection;
-
-    //crea un nuovo "Listener" per il gruppo appena creato
-    db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
-              
-        const messages = snapshot.val();
-        const message = `<li class=${
-            currentUser === messages.name ? "sent" : "receive"
-        }><span>${messages.name}: </span>${messages.message}</li>`;
-
-        console.log("inserito un messaggio");
-        // append the message on the page
-
-        console.log(nameChannel);
-        document.getElementById(nameChannel).innerHTML += message;
-    });
+    
     exitCreateChannel();
 
 }
@@ -232,42 +214,55 @@ function exitCreateChannel(){
                   name: "gruppo1"
                   users: (2) ['user1', 'user2']
 */
+
 function showChannels(){
-    db.ref('channels/').once("value", (snapshot) => {
-        document.getElementById("channels").innerHTML = "";
-        channels = Object.entries(snapshot.val());
+    //console.log(addedAllListener);
+    db.ref('channels/').on("child_added", (snapshot) => {
+        //console.log(addedAllListener);
+        //document.getElementById("channels").innerHTML = "";
+        channel = snapshot.val();
+        console.log(channel);
+        for(user of channel.users){
+            if(currentUser == user){
+                const aChannel = channel.name;
+                console.log(aChannel);
+                const aChannelSection = `<li><a onclick="selectChannel('${channel.name}')">${channel.name}</a></li>`;
+                document.getElementById("channels").innerHTML += aChannelSection;
 
-        for(channel of channels){
-            for(user of channel[1].users){
-                if(currentUser == user){
+                const divSection = `<ul id="${channel.name}" style="display: none"></ul>`;
+                document.getElementById("channelschat-section").innerHTML += divSection;
+                
+                db.ref(`channels/${aChannel}/messages/`).on("child_added", function (snapshot) {
 
-                    const aChannel = `<li><a onclick="selectChannel('${channel[1].name}')">${channel[1].name}</a></li>`;
-                    document.getElementById("channels").innerHTML += aChannel;
+                    console.log("////////////////////");
 
-                    const divSection = `<ul id="${channel[1].name}" style="display: none"></ul>`;
-                    document.getElementById("channelschat-section").innerHTML += divSection;
-                    
-                    //if(!addedAllListener){
-                        const nameChannel = channel[1].name;
-                        //crea un listener, che poi ogni volta che viene aggiunto un messaggio viene eseguito
-                        db.ref(`channels/${nameChannel}/messages/`).on("child_added", function (snapshot) {
-              
-                            const messages = snapshot.val();
-                            const message = `<li class=${
-                                currentUser === messages.name ? "sent" : "receive"
-                            }><span>${messages.name}: </span>${messages.message}</li>`;
-
-                            console.log("inserito un messaggio");
-                            // append the message on the page
-
-                            console.log(nameChannel);
-                            document.getElementById(nameChannel).innerHTML += message;
-                        });
-                        //addedAllListener = true;
-                    }
-                    
-                //}
+                    const messages = snapshot.val();
+                    const message = `<li class=${
+                        currentUser === messages.name ? "sent" : "receive"
+                    }><span>${messages.name}: </span>${messages.message}</li>`;
+    
+                    console.log("inserito un messaggio");
+                    // append the message on the page
+    
+                    console.log(aChannel);
+                    document.getElementById(aChannel).innerHTML += message;
+                });
             }
+        }        
+    });
+}
+
+function addAllListeners(){
+    db.ref('channels/').once("value", (snapshot) => {
+
+        console.log(snapshot.val());
+
+        for(channel in snapshot.val()){
+            const aChannel = channel;
+            //const nameChannel = channel.name;
+            console.log(channel);
+            //crea un listener, che poi ogni volta che viene aggiunto un messaggio viene eseguito
+            
         }
     });
 }
