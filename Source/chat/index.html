@@ -9,42 +9,81 @@
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
     <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <script src="js/bootstrap.min.js"></script>
     
     
     <title>Login - Chat</title>
 
    </head>
 <body>
-    <div id="header-section">
-        <h1>Chat with Firebase</h1>
-        <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="col-2 navbar-brand">
+                <img src="img/firebase-logo.png" alt="" width="24" height="30" class="d-inline-block align-text-top">
+                Firebase - Chat
+            </span>
+            <span class="col-2 navbar-text" id="user"></span>
+            <div class="btn-group  dropstart">
+                <button type="button" class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    Settings
+                  </button>
+                <ul class="dropdown-menu">
+                    <!-- Button trigger modal -->
+                    <li><a data-bs-toggle="modal" data-bs-target="#createChannel" href="#" class="nav-link active" name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</a></li>
+                    <li><a class="nav-link" href="#">Set message duration</a></li>
+                    <li><a class="nav-link" href="#">Logout</a></li>
+                </ul>
+              </div>
+        </div>
+    </nav>
+
+    
+        
         
         <!--
         <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
         <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
         <button name="admin-mode" onclick="createChannelSection()" style="display: none;">Create a channel</button>
         <button name="admin-mode" onclick="" style="display: none;">Logout</button>
-        -->    
+        -->
+
+    <div class="containter-fluid" id="login-section">
+        
+        <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="card shadow-2-strong" style="border-radius: 1rem;">
+                        <div class="card-body p-5 text-center">
+        
+                            <h3 class="mb-5">Login</h3>
+        
+                            <div class="form-outline mb-4">
+                                <input placeholder="Email" type="email" id="email" class="form-control form-control-lg" />
+                      
+                            </div>
+        
+                            <div class="form-outline mb-4">
+                                <input placeholder="Password" type="password" id="password" class="form-control form-control-lg" />
+                            </div>
+
+                            <button class="btn btn-dark btn-lg btn-block" onclick="loginUser()">Login</button>
+                            <br>
+                            <br>
+                            <div>
+                                <p class="mb-0">Don't you have an account? <a href="register.html" class="text-black-50 fw-bold">Register</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        
+        
     </div>
-
-    <div id="login-section">
-        <h3>Login</h3>
-        <label>Email</label><br>
-        <input type="email" id="email" name="email">
-
-        <br><br>
-
-        <label>Password</label><br>
-        <input type="password" id="password" name="password">
-
-        <br><br>
-
-        <button onclick="loginUser()">Login</button>
-    
-        <br><br>
-        <label>Don't you have an account?</label> <a href="./register.html">Register</a>
-    </div>
-
+<!--
     <div id="createchannel-section" style="display: none;">
         <button onclick="exitCreateChannel()">Back</button>
         <h3>Create a channel</h3>
@@ -59,27 +98,60 @@
         <button onclick="createChannel()">Crea canale</button>
     </div>
 
-    <div id="principal-section">
-        <div id="channel-section" style="display: block;">
-            <ul id="channels"></ul>
-        </div>
-        
-        <div id="chat-section" style="display: none;">
-            <!-- messages will display here -->
-            <div id="channelschat-section">
-                
+-->
+    
+  
+    <!-- Modal -->
+    <div class="modal fade" id="createChannel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Create a channel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input placeholder="Name" id="name-channel">
+                    <br><br>
+                    Users:
+                    <div id="list-user" style="height: 100px;">
+
+                    </div>
+                    <br>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-dark" onclick="createChannel()">Create</button>
+                </div>
             </div>
-            
-          
-            <!-- form to send message -->
-            <form id="message-form">
-              <input id="message-input" type="text" />
-              <button id="message-btn" type="submit">Send</button>
-            </form>
         </div>
     </div>
-    
-    
+
+
+
+    <div class="container-fluid" id="principal-section" style="display:none;" >
+        <div class="row">
+            <div class="col" id="channel-section" style="display: block; margin: 0px; padding: 0px;">
+                <div  id="channels" class="list-group"style="display: block;">
+                </div>
+            </div>
+            
+            <div class="col-9"  id="chat-section" style="display: block;">
+                <!-- messages will display here -->
+                <div id="channelschat-section">
+                    <div></div>
+                </div>
+                
+              
+                <!-- form to send message -->
+                <form id="message-form" style="display:none; position: fixed; bottom: 0; right: 0; height: 55px; width: 75%;">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Write a message" aria-label="Write a message" aria-describedby="button-addon2" id="message-input">
+                        <button class="btn btn-outline-secondary" id="message-btn" type="submit">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <script  src="./script.js"></script>
 </body>
 </html>

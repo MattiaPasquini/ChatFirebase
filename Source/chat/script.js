@@ -81,6 +81,7 @@ function loginUser(){
         db.ref('users/' + userCredential.user.uid).once("value", (snapshot)=>{
             currentUser = snapshot.val().username;
             console.log(currentUser);
+            document.getElementById("user").innerHTML = "User: " + currentUser;
 
             if(snapshot.val().isAdmin){
                 var ad = document.getElementsByName("admin-mode");
@@ -92,7 +93,7 @@ function loginUser(){
         var user = userCredential.user;
         console.log(user);
         console.log(currentUser);
-    
+        
         document.getElementById("login-section").style.display = "none";
         document.getElementById("principal-section").style.display = "block";
         //document.getElementById("chat-section").style.display = "block";
@@ -149,8 +150,8 @@ function sendMessage(e){
 function createChannelSection(){
     document.getElementById("list-user").innerHTML = "";
   
-    document.getElementById("principal-section").style.display = "none";
-    document.getElementById("createchannel-section").style.display = "block";
+    //document.getElementById("principal-section").style.display = "none";
+    //document.getElementById("createchannel-section").style.display = "block";
     
     db.ref('users/').on('value', (snapshot)=>{
         var listUsers = [];
@@ -226,10 +227,11 @@ function showChannels(){
             if(currentUser == user){
                 const aChannel = channel.name;
                 console.log(aChannel);
-                const aChannelSection = `<li><a onclick="selectChannel('${channel.name}')">${channel.name}</a></li>`;
+                
+                const aChannelSection = `<a href="#" class="list-group-item list-group-item-action" onclick="selectChannel('${channel.name}')">${channel.name}</a>`;
                 document.getElementById("channels").innerHTML += aChannelSection;
 
-                const divSection = `<ul id="${channel.name}" style="display: none"></ul>`;
+                const divSection = `<div id="${channel.name}" style="display: none; overflow-y: scroll; height:calc(100vh - 115px);"></div>`;
                 document.getElementById("channelschat-section").innerHTML += divSection;
                 
                 db.ref(`channels/${aChannel}/messages/`).on("child_added", function (snapshot) {
@@ -252,21 +254,6 @@ function showChannels(){
     });
 }
 
-function addAllListeners(){
-    db.ref('channels/').once("value", (snapshot) => {
-
-        console.log(snapshot.val());
-
-        for(channel in snapshot.val()){
-            const aChannel = channel;
-            //const nameChannel = channel.name;
-            console.log(channel);
-            //crea un listener, che poi ogni volta che viene aggiunto un messaggio viene eseguito
-            
-        }
-    });
-}
- 
 
 function selectChannel(channel){
     if(currentChannel == channel){
@@ -276,7 +263,7 @@ function selectChannel(channel){
             document.getElementById(currentChannel).style.display = "none";
         }
     }
-    document.getElementById("chat-section").style.display = "block";
+    document.getElementById("message-form").style.display = "block";
     currentChannel = channel;
     document.getElementById(currentChannel).style.display = "block";
 } 

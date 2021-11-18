@@ -1,46 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Mattia Pasquini">
 
-    
-    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
-    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
-    <script  src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.1/firebase-auth.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <title>Register - Chat</title>
+</head>
 
-    
-
-   </head>
 <body>
-    <h1>Chat with Firebase</h1>
 
-    <h3>Register</h3>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="col-2 navbar-brand">
+                <img src="img/firebase-logo.png" alt="" width="24" height="30" class="d-inline-block align-text-top">
+                Firebase - Chat
+            </span>
+            <span class="col-2 navbar-text" id="user"></span>
+            <div class="btn-group  dropstart">
+                <button type="button" class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    Settings
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" class="nav-link active" name="admin-mode" onclick="createChannelSection()"
+                            style="display: none;">Create a channel</a></li>
+                    <li><a class="nav-link" href="#">Set message duration</a></li>
+                    <li><a class="nav-link" href="#">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    <label>Name</label><br>
-    <input type="text" id="name" name="name">
+    <div class="containter-fluid" id="login-section">
 
-    <br><br>
+        <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="card shadow-2-strong" style="border-radius: 1rem;">
+                        <div class="card-body p-5 text-center">
 
-    <label>Email</label><br>
-    <input type="email" id="email" name="email">
+                            <h3 class="mb-5">Register</h3>
 
-    <br><br>
+                            <div class="form-outline mb-4">
+                                <input placeholder="Username" type="text" id="name" name="name"
+                                    class="form-control form-control-lg" />
 
-    <label>Password</label><br>
-    <input type="password" id="password" name="password">
+                            </div>
 
-    <br><br>
+                            <div class="form-outline mb-4">
+                                <input placeholder="Email" type="email" id="email"
+                                    class="form-control form-control-lg" />
 
-    <button onclick="registerUser()">Register</button>
-    
-    <br><br>
-    <label>Do you have an account?</label> <a href="index.html">Login</a>
+                            </div>
 
-    <script  src="./script.js"></script>
+                            <div class="form-outline mb-4">
+                                <input placeholder="Password" type="password" id="password"
+                                    class="form-control form-control-lg" />
+                            </div>
+
+                            <button class="btn btn-dark btn-lg btn-block" onclick="registerUser()">Register</button>
+                            <br>
+                            <br>
+                            <div>
+                                <p class="mb-0">Do you have an account? <a href="index.html"
+                                        class="text-black-50 fw-bold">Login</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="./script.js"></script>
+
 </body>
+
 </html>
