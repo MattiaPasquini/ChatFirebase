@@ -1,0 +1,18 @@
+.sent{
+    background-color: #ebebeb;
+    /*width: min-content;
+    height: min-content;*/
+    /*float: right;*/
+    padding: 10px 20px;
+    margin: 4px 2px;
+    border-radius: 16px;
+}
+
+.receive{
+    background-color: #d1c37b;
+    /*width: min-content;
+    height: min-content;*/
+    padding: 10px 20px;
+    margin: 4px 2px;
+    border-radius: 16px;
+}
