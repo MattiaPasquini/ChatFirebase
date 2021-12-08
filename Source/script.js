@@ -21,6 +21,12 @@ var currentUserIsAdmin = false;
 var currentChannel = null;
 
 //#region metodi helper
+
+/**
+ * Controlla se il nome dell'utente è univoca
+ * @param {string} name nome utente
+ * @returns se il nome è univoca
+ */
 function checkName(name) {
     db.ref('users/').once('value', (snapshot) => {
         var listUsers = [];
@@ -42,6 +48,11 @@ function checkName(name) {
 
 //#region autenticazione
 
+/**
+ * Registrazione per nuovi utenti, creando un account
+ * con mail e password.
+ * E mette userId, username, email, isAdmin, isBanned nel database su firebase
+ */
 function registerUser() {
     var name = document.getElementById("name").value;
     var email = document.getElementById("email").value;
@@ -71,6 +82,11 @@ function registerUser() {
     }
 }
 
+/**
+ * Login per gli utenti già registrati. 
+ * Poi controlla se è admin, se è amministratore mette visibile
+ * alcuni elementi (crea canale, broadcast, ...)
+ */
 function loginUser() {
     var email = document.getElementById("email").value;
     var password = document.getElementById("password").value;
@@ -111,6 +127,9 @@ function loginUser() {
         });
 }
 
+/**
+ * Logout dell'utente
+ */
 function logoutUser() {
     firebase.auth().signOut().then(() => {
         location.reload();
@@ -125,6 +144,10 @@ function logoutUser() {
 var a = document.getElementById("message-form")
 if (a) { addEventListener("submit", sendMessage); }
 
+/**
+ * Invia il messaggio in un canale corrente, mettendo
+ * il contenuto, l'utente che ha mandato e la data dell'invio (timestamp)
+ */
 function sendMessage(e) {
     if(currentChannel == null){
         return;
@@ -156,8 +179,15 @@ function sendMessage(e) {
 
 //#region Canali
 
-
-
+/**
+ * Funzione per mostrare la lista dei canali e la chat.
+ * Viene utilizzato due ascolti per l'aggiunta (child_added), 
+ * uno per canale e uno per gli utenti, così da mostrare solo
+ * i canali per gli utenti correnti che ne fanno parte. E per
+ * aggiungere il canale o utente e mostra subito visivamente senza
+ * dover fare refresh sulla pagina. Questo vale lo stesso anche per la 
+ * rimozione dell'utente dal canale e rimozione del canale dalla piattaforma
+ */
 function showChannels() {
 
     //aggiunta canali
@@ -239,6 +269,10 @@ function showChannels() {
     });
 }
 
+/**
+ * Cambiare il canale corrente
+ * @param channel canale selezionato
+ */
 function selectChannel(channel) {
     if (currentChannel == channel) {
         return;
@@ -260,6 +294,13 @@ function selectChannel(channel) {
     scroll.scrollTop = scroll.scrollHeight;
 }
 
+/**
+ * Serve per mostrare visivamente le informazioni del canale
+ * corrente, il nome del canale, la lista degli utenti presenti in quel gruppo
+ * e se si è amministratore mostra anche il bottone per eliminare il canale, 
+ * il bottone per aggiungere gli utenti, link per rimuovere gli utenti e cambio
+ * nome del canale
+ */
 function infoChannelSection() {
     db.ref(`channels/${currentChannel}/users/`).on('value', (snapshot) => {
         document.getElementById("list-user-channel").innerHTML = "";
@@ -281,6 +322,12 @@ function infoChannelSection() {
         }
     });
 }
+
+
+
+//#endregion
+
+//#region comandi per amministratori
 
 function createChannelSection() {
     document.getElementById("createChannelError").innerHTML = "";
@@ -309,10 +356,6 @@ function createChannelSection() {
         }
     });
 }
-
-//#endregion
-
-//#region comandi per amministratori
 
 function createChannel() {
     document.getElementById("createChannelError").innerHTML = "";
