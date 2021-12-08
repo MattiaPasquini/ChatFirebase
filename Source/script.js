@@ -17,6 +17,7 @@ const db = firebase.database();
 
 //variabili globali
 var currentUser = null;
+var currentUserIsAdmin = false;
 var currentChannel = null;
 
 //#region metodi helper
@@ -57,7 +58,8 @@ function registerUser() {
                     userId: uid,
                     username: name,
                     email: email,
-                    isAdmin: false
+                    isAdmin: false,
+                    isBanned: false
                 })
                 console.log(user);
             })
@@ -68,7 +70,6 @@ function registerUser() {
             });
     }
 }
-
 
 function loginUser() {
     var email = document.getElementById("email").value;
@@ -84,6 +85,7 @@ function loginUser() {
                 document.getElementById("user").innerHTML = "User: " + currentUser;
 
                 if (snapshot.val().isAdmin) {
+                    currentUserIsAdmin = true;
                     var ad = document.getElementsByName("admin-mode");
                     for (element of ad) {
                         element.style.display = "block";
@@ -120,14 +122,13 @@ function logoutUser() {
 
 //#region invio e recezione messaggi
 
-/**
-* evento in ascolto nel bottone invio del messaggio e 
-* quando triggera invoca metodo sendMessage
-*/
 var a = document.getElementById("message-form")
 if (a) { addEventListener("submit", sendMessage); }
 
 function sendMessage(e) {
+    if(currentChannel == null){
+        return;
+    }
     e.preventDefault();
 
 
@@ -155,66 +156,7 @@ function sendMessage(e) {
 
 //#region Canali
 
-function createChannelSection() {
-    document.getElementById("list-user").innerHTML = "";
 
-    db.ref('users/').on('value', (snapshot) => {
-
-        //ottieni la lista degli utenti
-        var listUsers = [];
-        snapshot.forEach((item) => {
-            var itemVal = item.val();
-            listUsers.push(itemVal['username']);
-        });
-        listUsers.sort();
-        console.log(listUsers);
-
-
-        for (element of listUsers) {
-            //console.log(element[`username`]);
-            var aUser = `<input type="checkbox" name="user" value="${element}"><label for="${element}"> ${element}</label><br>`;
-
-            //console.log(aUser);
-            document.getElementById("list-user").innerHTML += aUser;
-        }
-    });
-}
-
-
-
-function createChannel() {
-    var nameChannel = document.getElementById("name-channel").value;
-
-    if (nameChannel === '') {
-        return false;
-    }
-
-    //inserisci gli utenti selezionati nell'array
-    usersSelected = [];
-    var users = document.getElementById("list-user").children;
-
-    Array.from(users).forEach(input => {
-        if (input.checked) {
-            usersSelected.push(input.value);
-        }
-    });
-
-    db.ref('channels/' + nameChannel).set({
-        name: nameChannel,
-        users: usersSelected,
-    });
-
-    $("#createChannel").modal('hide'); //chiude modal
-}
-
-/* 
-  channels = Object.entries(snapshot.val());
-  output => 0: Array(2)
-              0: "gruppo1"
-              1:
-                name: "gruppo1"
-                users: (2) ['user1', 'user2']
-*/
 
 function showChannels() {
 
@@ -229,9 +171,9 @@ function showChannels() {
           * Se vengono aggiunti più utenti, vengono richiamati questo listener il numero di volte
           * degli utenti aggiunti
           */
-        db.ref(`channels/${channel.name}/users/`).on("child_added", (snapshot) => {
+        db.ref(`channels/${channel.name}/users/`).on("child_added", (snapshot1) => {
 
-            if (currentUser == snapshot.val()) {
+            if (currentUser == snapshot1.val()) {
                 const aChannel = channel.name;
                 console.log(aChannel);
 
@@ -245,11 +187,11 @@ function showChannels() {
                 document.getElementById("channelschat-section").innerHTML += divSectionChat;
 
                 //ascolto quando arrivano nuovi messaggi
-                db.ref(`channels/${aChannel}/messages/`).on("child_added", function (snapshot) {
-
-                    const messages = snapshot.val();
+                db.ref(`channels/${aChannel}/messages/`).on("child_added", (snapshot2) => {
+                    var width = document.getElementById("channel-section").style.width;
+                    const messages = snapshot2.val();
                     const message = `<div class=${currentUser === messages.name ? "sent" : "receive"
-                        }><b>${messages.name}: </b>${messages.message}</div>`;
+                        } style="word-wrap: break-word;"><b>${messages.name}: </b>${messages.message}</div>`;
 
                     console.log("inserito un messaggio");
                     // append the message on the page
@@ -259,6 +201,25 @@ function showChannels() {
 
                     var scroll = document.getElementById(aChannel);
                     scroll.scrollTop = scroll.scrollHeight;
+                });
+
+                //ascolto quando un utente viene rimosso dal gruppo
+                db.ref(`channels/${aChannel}/users`).on("child_removed", (snapshot2) => {
+                    var user = snapshot2.val();
+                    
+                    console.log(user);
+
+                    if(user == currentUser){
+                        //il canale eliminato viene rimosso nella lista
+                        document.getElementById(channel.name + "Channel").remove();
+
+                        //il chat del canale eliminato viene rimosso
+                        document.getElementById(channel.name).remove();
+                        currentChannel = null;
+
+                        document.getElementById("navbar-channel").style.display = "none";
+                        db.ref(`channels/${aChannel}/messages/`).off('child_added');
+                    }
                 });
             }
         });
@@ -277,7 +238,6 @@ function showChannels() {
         document.getElementById("navbar-channel").style.display = "none";
     });
 }
-
 
 function selectChannel(channel) {
     if (currentChannel == channel) {
@@ -300,8 +260,6 @@ function selectChannel(channel) {
     scroll.scrollTop = scroll.scrollHeight;
 }
 
-
-
 function infoChannelSection() {
     db.ref(`channels/${currentChannel}/users/`).on('value', (snapshot) => {
         document.getElementById("list-user-channel").innerHTML = "";
@@ -313,22 +271,91 @@ function infoChannelSection() {
             
             //console.log(element[`username`]);
             if(currentUser != element){
-                var aUser = `<li style="list-style-type: none;"> ${element} <a name="admin-mode" href="#" style="float: right; margin-right:20px; display: none;" onclick="removeUser('${element}')">remove</a></li>`;
-                //console.log(aUser);
+                var aUser = `<li style="list-style-type: none;">${element}`;
+                if(currentUserIsAdmin){
+                    aUser += `<a href="#" style="float: right; margin-right:20px;" onclick="removeUser('${element}')">remove</a>`;
+                }
+                aUser != `</li>`;
                 document.getElementById("list-user-channel").innerHTML += aUser;
             }
         }
     });
 }
 
+function createChannelSection() {
+    document.getElementById("createChannelError").innerHTML = "";
+    document.getElementById("list-user").innerHTML = "";
+
+    db.ref('users/').on('value', (snapshot) => {
+
+        //ottieni la lista degli utenti
+        var listUsers = [];
+        snapshot.forEach((item) => {
+            var itemVal = item.val();
+            if(itemVal['username'] != currentUser){
+                listUsers.push(itemVal['username']);
+            }
+        });
+        listUsers.sort();
+        console.log(listUsers);
+
+
+        for (element of listUsers) {
+            //console.log(element[`username`]);
+            var aUser = `<input type="checkbox" name="user" id="${element}User" value="${element}"><label for="${element}User"> ${element}</label><br>`;
+
+            //console.log(aUser);
+            document.getElementById("list-user").innerHTML += aUser;
+        }
+    });
+}
 
 //#endregion
 
 //#region comandi per amministratori
 
+function createChannel() {
+    document.getElementById("createChannelError").innerHTML = "";
+    var nameChannel = document.getElementById("name-channel").value.trim();
+
+    if (nameChannel === '') {
+        return;
+    }
+    if(nameChannel.length > 20){
+        document.getElementById("createChannelError").innerHTML += "Maximum 20 characters!<br>";
+        return;
+    }
+
+    //inserisci gli utenti selezionati nell'array
+    var usersSelected = [];
+    var users = document.getElementById("list-user").children;
+
+    Array.from(users).forEach(input => {
+        if (input.checked) {
+            usersSelected.push(input.value);
+        }
+    });
+
+    if(usersSelected.length < 1){
+        document.getElementById("createChannelError").innerHTML += "Select at least one user";
+        return;
+    }
+
+    
+    //inserisci anche utente corrente (creatore gruppo)
+    usersSelected.push(currentUser);
+
+    db.ref('channels/' + nameChannel).set({
+        name: nameChannel,
+        users: usersSelected,
+    });
+    document.getElementById("name-channel").value = "";
+    $("#createChannel").modal('hide'); //chiude modal
+}
+
 function deleteChannel() {
     db.ref('channels/' + currentChannel).remove();
-    $("#addUser").modal('hide'); //chiude modal
+    $("#deleteChannel").modal('hide'); //chiude modal
 }
 
 /**
@@ -413,12 +440,16 @@ function broadcastMessage(){
     // clear the input box
     messageInput.value = "";
 
-    // create db collection and send in the data
-    var channelMessage = `channels/${currentChannel}/messages/`;
-    db.ref(channelMessage + timestamp).set({
-        name: currentUser,
-        message: message,
+    db.ref('channels/').once("value", (snapshot) => {
+        for(channel of Object.values(snapshot.val())){
+            if(channel.users.indexOf(currentUser) != -1){
+                var channelMessage = `channels/${channel.name}/messages/`;
+                db.ref(channelMessage + timestamp).set({
+                    name: currentUser,
+                    message: message,
+                });
+            }
+        }
     });
 }
-
 //#endregion

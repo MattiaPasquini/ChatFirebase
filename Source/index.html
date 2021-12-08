@@ -151,6 +151,9 @@
 
                     </div>
                     <br>
+                    <div id="createChannelError" style="color:red;">
+
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -165,6 +168,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="infoChannelModalLabel"></h5>
+                    <a name="admin-mode">change the name</a>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -172,12 +176,12 @@
                     <ul id="list-user-channel" style="max-height: 500px; overflow-y: scroll;">
 
                     </ul>
-
+                    <br>
                     <button name="admin-mode" type="button" class="btn btn-dark" onclick="addUserList()" 
                     data-bs-toggle="modal" data-bs-target="#addUser" style="display: none;">Add a user</button>
-
+                    <br>
                     <button name="admin-mode" type="button" class="btn btn-danger"
-                        data-bs-toggle="modal" data-bs-target="#deleteChannel" style="float: right; display: none;">Delete this channel</button>
+                        data-bs-toggle="modal" data-bs-target="#deleteChannel" style="display: none;">Delete this channel</button>
                 </div>
                 <!--
                 <div class="modal-footer">
@@ -200,7 +204,8 @@
                     <br>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal"
+                    data-bs-toggle="modal" data-bs-target="#infoChannel">No</button>
                     <button type="button" class="btn btn-danger" onclick="deleteChannel()">Yes</button>
                 </div>
             </div>
