@@ -170,6 +170,7 @@ function sendMessage(e) {
     db.ref(channelMessage + timestamp).set({
         name: currentUser,
         message: message,
+        time: timestamp
     });
     var scroll = document.getElementById(currentChannel);
     scroll.scrollTop = scroll.scrollHeight;
@@ -193,64 +194,61 @@ function showChannels() {
     //aggiunta canali
     db.ref('channels/').on("child_added", (snapshot) => {
         var channel = snapshot.val();
-        console.log(channel);
 
-         /**
-          * all'inizio 
-          * ascolto quando vengono aggiunti nuovi utenti.
-          * Se vengono aggiunti più utenti, vengono richiamati questo listener il numero di volte
-          * degli utenti aggiunti
-          */
         db.ref(`channels/${channel.name}/users/`).on("child_added", (snapshot1) => {
 
             if (currentUser == snapshot1.val()) {
                 const aChannel = channel.name;
-                console.log(aChannel);
 
                 const aChannelsSection = `<a id="${channel.name}Channel" href="#" class="list-group-item list-group-item-action btn-group dropend" onclick="selectChannel('${channel.name}')">${channel.name}</a>`;
-                console.log(aChannelsSection);
+                
                 document.getElementById("channels").innerHTML += aChannelsSection;
 
                 const divSectionChat =
                     `<div id="${channel.name}" style="display: none; overflow-y: scroll; height:calc(100vh - 170px);"></div>`;
 
                 document.getElementById("channelschat-section").innerHTML += divSectionChat;
-
+                
                 //ascolto quando arrivano nuovi messaggi
                 db.ref(`channels/${aChannel}/messages/`).on("child_added", (snapshot2) => {
                     var width = document.getElementById("channel-section").style.width;
                     const messages = snapshot2.val();
-                    const message = `<div class=${currentUser === messages.name ? "sent" : "receive"
-                        } style="word-wrap: break-word;"><b>${messages.name}: </b>${messages.message}</div>`;
+                    console.log(messages);
 
-                    console.log("inserito un messaggio");
+                    var message = `<div class=${currentUser === messages.name ? "sent" : "receive"} style="word-wrap: break-word;" id='${messages.time}'>`;
+                        
+                        message += `<div><b>${messages.name}: </b>${messages.message}</div>`;
+                        message += `<div onclick="deleteMessage(${messages.time})">delete</div>`;
+                        message +=`</div>`;
+
                     // append the message on the page
-
-                    console.log(aChannel);
                     document.getElementById(aChannel).innerHTML += message;
 
                     var scroll = document.getElementById(aChannel);
                     scroll.scrollTop = scroll.scrollHeight;
-                });
-
-                //ascolto quando un utente viene rimosso dal gruppo
-                db.ref(`channels/${aChannel}/users`).on("child_removed", (snapshot2) => {
-                    var user = snapshot2.val();
                     
-                    console.log(user);
-
-                    if(user == currentUser){
-                        //il canale eliminato viene rimosso nella lista
-                        document.getElementById(channel.name + "Channel").remove();
-
-                        //il chat del canale eliminato viene rimosso
-                        document.getElementById(channel.name).remove();
-                        currentChannel = null;
-
-                        document.getElementById("navbar-channel").style.display = "none";
-                        db.ref(`channels/${aChannel}/messages/`).off('child_added');
-                    }
                 });
+                db.ref(`channels/${aChannel}/messages/`).on("child_removed", (snapshot2) => {
+                    var messageDeleted = snapshot2.val();
+                    document.getElementById(messageDeleted.time).remove();
+                });
+            }
+        });
+
+        //ascolto quando un utente viene rimosso dal gruppo
+        db.ref(`channels/${channel.name}/users/`).on("child_removed", (snapshot1) => {
+            console.log(snapshot1.val());
+
+            if(currentUser == snapshot1.val()){
+                //il canale che l'utente viene rimosso, viene rimosso nella lista
+                document.getElementById(channel.name + "Channel").remove();
+
+                //il chat del canale che l'utente viene rimosso, viene rimosso
+                document.getElementById(channel.name).remove();
+                currentChannel = null;
+
+                document.getElementById("navbar-channel").style.display = "none";
+                db.ref(`channels/${channel.name}/messages/`).off('child_added');
             }
         });
     });
@@ -267,6 +265,11 @@ function showChannels() {
 
         document.getElementById("navbar-channel").style.display = "none";
     });
+
+    //ascolto quando cambi il nome del canale
+    db.ref('channels/').on("child_changed", (snapshot) => {
+
+    });
 }
 
 /**
@@ -278,7 +281,6 @@ function selectChannel(channel) {
         return;
     } else {
         if (currentChannel != null) {
-            console.log(currentChannel);
             document.getElementById(currentChannel).style.display = "none";
         }
     }
@@ -310,7 +312,6 @@ function infoChannelSection() {
         document.getElementById("list-user-channel").innerHTML += "<li style='list-style-type: none;'> Tu </li>";
         for (element of users) {
             
-            //console.log(element[`username`]);
             if(currentUser != element){
                 var aUser = `<li style="list-style-type: none;">${element}`;
                 if(currentUserIsAdmin){
@@ -327,7 +328,7 @@ function infoChannelSection() {
 
 //#endregion
 
-//#region comandi per amministratori
+//#region comandi per amministratori (ulteriore controllo se è amministratore)
 
 function createChannelSection() {
     document.getElementById("createChannelError").innerHTML = "";
@@ -339,25 +340,24 @@ function createChannelSection() {
         var listUsers = [];
         snapshot.forEach((item) => {
             var itemVal = item.val();
-            if(itemVal['username'] != currentUser){
-                listUsers.push(itemVal['username']);
-            }
+            listUsers.push(itemVal['username']);
+            
         });
         listUsers.sort();
         console.log(listUsers);
 
 
         for (element of listUsers) {
-            //console.log(element[`username`]);
-            var aUser = `<input type="checkbox" name="user" id="${element}User" value="${element}"><label for="${element}User"> ${element}</label><br>`;
-
-            //console.log(aUser);
-            document.getElementById("list-user").innerHTML += aUser;
+            if(element != currentUser){
+                var aUser = `<input type="checkbox" name="user" id="${element}User" value="${element}"><label for="${element}User"> ${element}</label><br>`;
+                document.getElementById("list-user").innerHTML += aUser;
+            }
         }
     });
 }
 
 function createChannel() {
+    //controlli
     document.getElementById("createChannelError").innerHTML = "";
     var nameChannel = document.getElementById("name-channel").value.trim();
 
@@ -373,20 +373,18 @@ function createChannel() {
     var usersSelected = [];
     var users = document.getElementById("list-user").children;
 
+    //inserisci anche utente corrente (creatore gruppo)
+    usersSelected.push(currentUser);
     Array.from(users).forEach(input => {
         if (input.checked) {
             usersSelected.push(input.value);
         }
     });
 
-    if(usersSelected.length < 1){
+    if(usersSelected.length < 2){
         document.getElementById("createChannelError").innerHTML += "Select at least one user";
         return;
     }
-
-    
-    //inserisci anche utente corrente (creatore gruppo)
-    usersSelected.push(currentUser);
 
     db.ref('channels/' + nameChannel).set({
         name: nameChannel,
@@ -429,11 +427,9 @@ function deleteChannel() {
             console.log(listUsers);
 
             for (element of listUsers) {
-                //console.log(element[`username`]);
                 if(currentUser != element){
                     var aUser = `<input type="checkbox" name="user" id="${element}" value="${element}"><label for="${element}"> ${element}</label><br>`;
                 }
-                //console.log(aUser);
                 document.getElementById("list-addUser").innerHTML += aUser;
             }
         });
@@ -461,16 +457,35 @@ function addUser() {
 
 function removeUser(user){
     db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
+        console.log(user);
+
         var userRemove = snapshot.val();
+        console.log(userRemove);
+
         var index = userRemove.indexOf(user);
         userRemove.splice(index, 1);
+        console.log(userRemove);
 
-        //console.log(users);
         db.ref('channels/' + currentChannel).update({
             users: userRemove
         });
     });
 }
+
+function deleteMessage(timestampMessage){
+    console.log("messaggio eliminato");
+    $("#deleteMessage").modal('show'); //mostra modal
+
+    $(".btnDeleteMessage").click(function(){
+        db.ref(`channels/${currentChannel}/messages/${timestampMessage}`).remove();
+        $("#deleteMessage").modal('hide');
+    });
+}
+
+function confirmDropMessage(){
+    
+}
+
 
 function broadcastMessage(){
     // get values to be submitted
