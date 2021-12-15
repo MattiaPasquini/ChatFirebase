@@ -19,7 +19,7 @@ const db = firebase.database();
 var currentUser = null;
 var currentUserIsAdmin = false;
 var currentChannel = null;
-
+var isBanned = null;
 //#region metodi helper
 
 /**
@@ -44,6 +44,11 @@ function checkName(name) {
     });
     return true;
 }
+
+function getAdmin() {
+
+}
+
 //#endregion
 
 //#region autenticazione
@@ -82,49 +87,68 @@ function registerUser() {
     }
 }
 
+
 /**
  * Login per gli utenti già registrati. 
  * Poi controlla se è admin, se è amministratore mette visibile
  * alcuni elementi (crea canale, broadcast, ...)
  */
 function loginUser() {
+    isBanned = false;
     var email = document.getElementById("email").value;
     var password = document.getElementById("password").value;
 
-    firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-
-            // Signed in
-            db.ref('users/' + userCredential.user.uid).once("value", (snapshot) => {
-                currentUser = snapshot.val().username;
-                console.log(currentUser);
-                document.getElementById("user").innerHTML = "User: " + currentUser;
-
-                if (snapshot.val().isAdmin) {
-                    currentUserIsAdmin = true;
-                    var ad = document.getElementsByName("admin-mode");
-                    for (element of ad) {
-                        element.style.display = "block";
+    db.ref('ban/').once('value', (snapshot) => {
+        if (snapshot.val() != null) {
+            var listBan = Object.entries(snapshot.val());
+            for (var record of listBan) {
+                if (record[1].email == email) {
+                    //console.log(Date.now() < record[1].endBan);
+                    if (Date.now() < record[1].endBan) {
+                        console.log(record[1].endBan);
+                        var date = new Date(record[1].endBan);
+                        console.log(date);
+                        document.getElementById("errorLogin").innerHTML = `You are banned until ${date.toLocaleString()}`;
+                        isBanned = true;
+                    } else {
+                        console.log("falsato");
+                        db.ref(`ban/${record[0]}`).remove();
+                        isBanned = false;
                     }
                 }
-            })
-            var user = userCredential.user;
-            console.log(user);
-            console.log(currentUser);
+            }
+        }
 
-            document.getElementById("login-section").style.display = "none";
-            document.getElementById("principal-section").style.display = "block";
-            document.getElementById("settings").style.display = "block";
-            //document.getElementById("chat-section").style.display = "block";
-            // ...
-            showChannels();
-            //addAllListeners();
-        })
-        .catch((error) => {
-            var errorCode = error.code;
-            var errorMessage = error.message;
-            console.log(errorMessage);
-        });
+        if (!isBanned) {
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+
+                    // Signed in
+                    db.ref('users/' + userCredential.user.uid).once("value", (snapshot) => {
+                        currentUser = snapshot.val().username;
+                        console.log(currentUser);
+                        document.getElementById("user").innerHTML = "User: " + currentUser;
+
+                        if (snapshot.val().isAdmin) {
+                            currentUserIsAdmin = true;
+                            var ad = document.getElementsByName("admin-mode");
+                            for (element of ad) {
+                                element.style.display = "block";
+                            }
+                        }
+                    })
+                    document.getElementById("login-section").style.display = "none";
+                    document.getElementById("principal-section").style.display = "block";
+                    document.getElementById("settings").style.display = "block";
+                    showChannels();
+                })
+                .catch((error) => {
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    console.log(errorMessage);
+                });
+        }
+    });
 }
 
 /**
@@ -149,7 +173,7 @@ if (a) { addEventListener("submit", sendMessage); }
  * il contenuto, l'utente che ha mandato e la data dell'invio (timestamp)
  */
 function sendMessage(e) {
-    if(currentChannel == null){
+    if (currentChannel == null) {
         return;
     }
     e.preventDefault();
@@ -201,14 +225,14 @@ function showChannels() {
                 const aChannel = channel.name;
 
                 const aChannelsSection = `<a id="${channel.name}Channel" href="#" class="list-group-item list-group-item-action btn-group dropend" onclick="selectChannel('${channel.name}')">${channel.name}</a>`;
-                
+
                 document.getElementById("channels").innerHTML += aChannelsSection;
 
                 const divSectionChat =
                     `<div id="${channel.name}" style="display: none; overflow-y: scroll; height:calc(100vh - 170px);"></div>`;
 
                 document.getElementById("channelschat-section").innerHTML += divSectionChat;
-                
+
                 //ascolto quando arrivano nuovi messaggi
                 db.ref(`channels/${aChannel}/messages/`).on("child_added", (snapshot2) => {
                     var width = document.getElementById("channel-section").style.width;
@@ -216,17 +240,17 @@ function showChannels() {
                     console.log(messages);
 
                     var message = `<div class=${currentUser === messages.name ? "sent" : "receive"} style="word-wrap: break-word;" id='${messages.time}'>`;
-                        
-                        message += `<div><b>${messages.name}: </b>${messages.message}</div>`;
-                        message += `<div onclick="deleteMessage(${messages.time})">delete</div>`;
-                        message +=`</div>`;
+
+                    message += `<div><b>${messages.name}: </b>${messages.message}</div>`;
+                    message += `<div onclick="deleteMessage(${messages.time})">delete</div>`;
+                    message += `</div>`;
 
                     // append the message on the page
                     document.getElementById(aChannel).innerHTML += message;
 
                     var scroll = document.getElementById(aChannel);
                     scroll.scrollTop = scroll.scrollHeight;
-                    
+
                 });
                 db.ref(`channels/${aChannel}/messages/`).on("child_removed", (snapshot2) => {
                     var messageDeleted = snapshot2.val();
@@ -239,7 +263,7 @@ function showChannels() {
         db.ref(`channels/${channel.name}/users/`).on("child_removed", (snapshot1) => {
             console.log(snapshot1.val());
 
-            if(currentUser == snapshot1.val()){
+            if (currentUser == snapshot1.val()) {
                 //il canale che l'utente viene rimosso, viene rimosso nella lista
                 document.getElementById(channel.name + "Channel").remove();
 
@@ -311,10 +335,10 @@ function infoChannelSection() {
 
         document.getElementById("list-user-channel").innerHTML += "<li style='list-style-type: none;'> Tu </li>";
         for (element of users) {
-            
-            if(currentUser != element){
+
+            if (currentUser != element) {
                 var aUser = `<li style="list-style-type: none;">${element}`;
-                if(currentUserIsAdmin){
+                if (currentUserIsAdmin) {
                     aUser += `<a href="#" style="float: right; margin-right:20px;" onclick="removeUser('${element}')">remove</a>`;
                 }
                 aUser != `</li>`;
@@ -341,14 +365,14 @@ function createChannelSection() {
         snapshot.forEach((item) => {
             var itemVal = item.val();
             listUsers.push(itemVal['username']);
-            
+
         });
         listUsers.sort();
         console.log(listUsers);
 
 
         for (element of listUsers) {
-            if(element != currentUser){
+            if (element != currentUser) {
                 var aUser = `<input type="checkbox" name="user" id="${element}User" value="${element}"><label for="${element}User"> ${element}</label><br>`;
                 document.getElementById("list-user").innerHTML += aUser;
             }
@@ -364,7 +388,7 @@ function createChannel() {
     if (nameChannel === '') {
         return;
     }
-    if(nameChannel.length > 20){
+    if (nameChannel.length > 20) {
         document.getElementById("createChannelError").innerHTML += "Maximum 20 characters!<br>";
         return;
     }
@@ -381,7 +405,7 @@ function createChannel() {
         }
     });
 
-    if(usersSelected.length < 2){
+    if (usersSelected.length < 2) {
         document.getElementById("createChannelError").innerHTML += "Select at least one user";
         return;
     }
@@ -404,7 +428,7 @@ function deleteChannel() {
  * e poi filtrare, così da rimanere solo utenti che non fanno parte di quel gruppo
  * e far visualizzare la lista sull'interfaccia
  */
- function addUserList() {
+function addUserList() {
     db.ref(`channels/${currentChannel}/users/`).once('value', (snapshot1) => {
         document.getElementById("list-addUser").innerHTML = "";
         //ottieni la lista degli utenti del gruppo
@@ -427,7 +451,7 @@ function deleteChannel() {
             console.log(listUsers);
 
             for (element of listUsers) {
-                if(currentUser != element){
+                if (currentUser != element) {
                     var aUser = `<input type="checkbox" name="user" id="${element}" value="${element}"><label for="${element}"> ${element}</label><br>`;
                 }
                 document.getElementById("list-addUser").innerHTML += aUser;
@@ -448,14 +472,14 @@ function addUser() {
 
     db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
         db.ref('channels/' + currentChannel).update({
-            users: snapshot.val().concat(usersSelected)
+            users: (snapshot.val().concat(usersSelected)).sort()
         });
     });
 
     $("#addUser").modal('hide'); //chiude modal
 }
 
-function removeUser(user){
+function removeUser(user) {
     db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
         console.log(user);
 
@@ -472,22 +496,18 @@ function removeUser(user){
     });
 }
 
-function deleteMessage(timestampMessage){
-    console.log("messaggio eliminato");
+function deleteMessage(timestampMessage) {
     $("#deleteMessage").modal('show'); //mostra modal
 
-    $(".btnDeleteMessage").click(function(){
+    $(".btnDeleteMessage").click(function () {
         db.ref(`channels/${currentChannel}/messages/${timestampMessage}`).remove();
         $("#deleteMessage").modal('hide');
     });
+
+    console.log("messaggio eliminato");
 }
 
-function confirmDropMessage(){
-    
-}
-
-
-function broadcastMessage(){
+function broadcastMessage() {
     // get values to be submitted
     const timestamp = Date.now();
     const messageInput = document.getElementById("broadcastMessage");
@@ -499,8 +519,8 @@ function broadcastMessage(){
     messageInput.value = "";
 
     db.ref('channels/').once("value", (snapshot) => {
-        for(channel of Object.values(snapshot.val())){
-            if(channel.users.indexOf(currentUser) != -1){
+        for (channel of Object.values(snapshot.val())) {
+            if (channel.users.indexOf(currentUser) != -1) {
                 var channelMessage = `channels/${channel.name}/messages/`;
                 db.ref(channelMessage + timestamp).set({
                     name: currentUser,
@@ -509,5 +529,43 @@ function broadcastMessage(){
             }
         }
     });
+}
+
+function listBanUsers() {
+    const listBanUsers = document.getElementById("list-banUsers");
+    listBanUsers.innerHTML = "<option value=''></option>";
+    db.ref('users/').once('value', (snapshot) => {
+        var listUsers = Object.values(snapshot.val());
+
+        for (user of listUsers) {
+            listBanUsers.innerHTML += `<option value="${user.email}">${user.username}</option>`;
+        }
+    });
+}
+
+function banUser() {
+    if (currentUserIsAdmin) {
+        document.getElementById("banError").innerHTML = "";
+        var email = document.getElementById("list-banUsers").value;
+        var reason = (document.getElementById("reason").value).trim();
+        var period = document.getElementById("period").value;
+
+        if (user == "") {
+            document.getElementById("banError").innerHTML = "Select a user.";
+        }
+        if (reason == "") {
+            document.getElementById("banError").innerHTML = "You should write a reason";
+        }
+        if (period == "" || parseInt(period) <= 0) {
+            document.getElementById("banError").innerHTML = "The period value is not valid";
+        }
+        var endBan = Date.now() + parseInt(period) * 3600 * 1000;
+
+        db.ref('ban/').push({
+            email: email,
+            reason: reason,
+            endBan: endBan
+        });
+    }
 }
 //#endregion

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="index.css">
 
 
-    <title>Login - Chat</title>
+    <title> Chat</title>
 
 </head>
 
@@ -48,7 +48,7 @@
                         name="admin-mode" style="display: none;" >Broadcast</a></li>
 
                     <li><a data-bs-toggle="modal" data-bs-target="#ban" href="#" class="dropdown-item"
-                        name="admin-mode" style="display: none;">Ban</a></li>
+                        name="admin-mode" style="display: none;" onclick="listBanUsers()">Ban</a></li>
 
                     <li><a class="dropdown-item" href="#" onclick="logoutUser()">Logout</a></li>
                 </ul>
@@ -77,6 +77,9 @@
                                 <input placeholder="Password" type="password" id="password"
                                     class="form-control form-control-lg" />
                             </div>
+                            <div id="errorLogin" style="color: red;">
+
+                            </div><br>
 
                             <button class="btn btn-dark btn-lg btn-block" onclick="loginUser()">Login</button>
                             <br>
@@ -109,9 +112,7 @@
                     <div class="container-fluid">
                         <a class="col-2 navbar-brand" id="channel-name" data-bs-toggle="modal"
                             data-bs-target="#infoChannel" href="#" onclick="infoChannelSection()">
-
                         </a>
-
                     </div>
                 </nav>
 
@@ -194,27 +195,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="changeName" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"> Change the channel name</h5>
-                </div>
-                <div class="modal-body">
-                    Channel name: <br>
-                    <input type="text" id="changeNameChannel">
-                                        
-                </div>
-                <div class="modal-footer">
-                    <button name="admin-mode" type="button" class="btn btn-secondary" 
-                    data-bs-toggle="modal" data-bs-target="#infoChannel" style="display: none;">Back</button>
-                    <button name="admin-mode" type="button" class="btn btn-dark"
-                        data-bs-toggle="modal" data-bs-target="#deleteChannel" style="display: none;" onclick="changeNameChannel()">Apply</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <div class="modal fade" id="deleteChannel" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -269,30 +249,11 @@
                 </div>
                 <div class="modal-body">
                     Message: <br>
-                    <textarea name="broadcastMessage" id="broadcastMessage" cols="50" rows="10"></textarea>
+                    <textarea name="broadcastMessage" class="form-control" id="broadcastMessage" rows="10"></textarea>
                     <br>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-dark" onclick="broadcastMessage()">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="ban" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Ban</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <select id="">
-                        ...
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark" onclick="banUser()">Ban this user</button>
                 </div>
             </div>
         </div>
@@ -309,13 +270,44 @@
                     Sure you want to delete this message permanently?
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal"
-                    data-bs-toggle="modal" data-bs-target="#infoChannel">No</button>
+                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">No</button>
                     <button type="button" class="btn btn-danger btnDeleteMessage">Yes</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="ban" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ban</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Select a user:
+                    <select id="list-banUsers" class="form-select form-select-sm">
+                    </select>
+                    <br>
+
+                    Reason:
+                    <textarea class="form-control" rows="5" id="reason"></textarea>
+                    <br>
+
+                    Period:
+                    <input type="number" class="form-control" id="period">
+                    <div id="banError" style="color:red;">
+                    
+                    </div>
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" onclick="banUser()">Ban this user</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 
     <script src="./script.js"></script>
 </body>
