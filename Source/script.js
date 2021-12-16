@@ -45,10 +45,6 @@ function checkName(name) {
     return true;
 }
 
-function getAdmin() {
-
-}
-
 //#endregion
 
 //#region autenticazione
@@ -67,15 +63,14 @@ function registerUser() {
     if (checkName(name)) {
         firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                //Signed in
+                
                 const user = userCredential.user;
                 var uid = user.uid;
                 db.ref('users/' + uid).set({
                     userId: uid,
                     username: name,
                     email: email,
-                    isAdmin: false,
-                    isBanned: false
+                    isAdmin: false
                 })
                 console.log(user);
             })
@@ -86,7 +81,6 @@ function registerUser() {
             });
     }
 }
-
 
 /**
  * Login per gli utenti già registrati. 
@@ -289,11 +283,6 @@ function showChannels() {
 
         document.getElementById("navbar-channel").style.display = "none";
     });
-
-    //ascolto quando cambi il nome del canale
-    db.ref('channels/').on("child_changed", (snapshot) => {
-
-    });
 }
 
 /**
@@ -306,9 +295,10 @@ function selectChannel(channel) {
     } else {
         if (currentChannel != null) {
             document.getElementById(currentChannel).style.display = "none";
-        }
+        }else{
+			document.getElementById("message-form").style.display = "block";
+		}
     }
-    document.getElementById("message-form").style.display = "block";
     currentChannel = channel;
     document.getElementById(currentChannel).style.display = "block";
     document.getElementById("navbar-channel").style.display = "block";
@@ -386,6 +376,7 @@ function createChannel() {
     var nameChannel = document.getElementById("name-channel").value.trim();
 
     if (nameChannel === '') {
+		document.getElementById("createChannelError").innerHTML += "Channel name should not be empty";
         return;
     }
     if (nameChannel.length > 20) {
@@ -550,14 +541,17 @@ function banUser() {
         var reason = (document.getElementById("reason").value).trim();
         var period = document.getElementById("period").value;
 
-        if (user == "") {
+        if (email == "") {
             document.getElementById("banError").innerHTML = "Select a user.";
+			return;
         }
         if (reason == "") {
             document.getElementById("banError").innerHTML = "You should write a reason";
+			return;
         }
         if (period == "" || parseInt(period) <= 0) {
             document.getElementById("banError").innerHTML = "The period value is not valid";
+			return;
         }
         var endBan = Date.now() + parseInt(period) * 3600 * 1000;
 
@@ -567,5 +561,9 @@ function banUser() {
             endBan: endBan
         });
     }
+}
+
+function configureDurationMessage(){
+
 }
 //#endregion
