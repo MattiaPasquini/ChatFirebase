@@ -324,7 +324,7 @@ function infoChannelSection() {
         var users = snapshot.val();
 
         document.getElementById("list-user-channel").innerHTML += "<li style='list-style-type: none;'> Tu </li>";
-        for (element of users) {
+        for (element of (users).sort()) {
 
             if (currentUser != element) {
                 var aUser = `<li style="list-style-type: none;">${element}`;
@@ -463,7 +463,7 @@ function addUser() {
 
     db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
         db.ref('channels/' + currentChannel).update({
-            users: (snapshot.val().concat(usersSelected)).sort()
+            users: snapshot.val().concat(usersSelected)
         });
     });
 
@@ -473,12 +473,20 @@ function addUser() {
 function removeUser(user) {
     db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
         console.log(user);
-
+        var supp;
         var userRemove = snapshot.val();
         console.log(userRemove);
 
         var index = userRemove.indexOf(user);
-        userRemove.splice(index, 1);
+        supp = userRemove[index];
+        userRemove[index] = userRemove[userRemove.length - 1];
+        userRemove[userRemove.length - 1] = supp;
+
+        db.ref('channels/' + currentChannel).update({
+            users: userRemove
+        });
+
+        userRemove.splice(userRemove.length - 1, 1);
         console.log(userRemove);
 
         db.ref('channels/' + currentChannel).update({
@@ -561,9 +569,5 @@ function banUser() {
             endBan: endBan
         });
     }
-}
-
-function configureDurationMessage(){
-
 }
 //#endregion
