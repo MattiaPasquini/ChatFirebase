@@ -17,11 +17,11 @@ const db = firebase.database();
 
 //variabili globali
 var currentUser = null;
-var currentUserIsAdmin = false;
+var currentUserIsAdmin = null;
 var currentChannel = null;
 var isBanned = null;
-//#region metodi helper
 
+//#region metodi helper
 /**
  * Controlla se il nome dell'utente è univoca
  * @param {string} name nome utente
@@ -58,12 +58,12 @@ function registerUser() {
     var name = document.getElementById("name").value;
     var email = document.getElementById("email").value;
     var password = document.getElementById("password").value;
-
+    document.getElementById("registration-log").innerHTML = "";
     //i nomi devono essere univoci
     if (checkName(name)) {
         firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                
+
                 const user = userCredential.user;
                 var uid = user.uid;
                 db.ref('users/' + uid).set({
@@ -72,13 +72,16 @@ function registerUser() {
                     email: email,
                     isAdmin: false
                 })
-                console.log(user);
+                window.open("index.html", "_self");
             })
             .catch((error) => {
                 const errorCode = error.code;
                 const errorMessage = error.message;
-                console.log(errorMessage);
+                console.log(error);
+                document.getElementById("registration-log").innerHTML = errorMessage;
             });
+    }else{
+        document.getElementById("registration-log").innerHTML = "The username is already exists.";
     }
 }
 
@@ -129,6 +132,8 @@ function loginUser() {
                             for (element of ad) {
                                 element.style.display = "block";
                             }
+                        }else{
+                            currentUserIsAdmin = false;
                         }
                     })
                     document.getElementById("login-section").style.display = "none";
@@ -138,8 +143,14 @@ function loginUser() {
                 })
                 .catch((error) => {
                     var errorCode = error.code;
-                    var errorMessage = error.message;
+                    const errorMessage = error.message;
+                    console.log(error);
                     console.log(errorMessage);
+                    if(error.code == "auth/user-not-found" || error.code == "auth/wrong-password"){
+                        document.getElementById("errorLogin").innerHTML = "E-mail or password are not valid.";
+                    }
+                    document.getElementById("email").value = "";
+                    document.getElementById("password").value = "";
                 });
         }
     });
@@ -208,15 +219,13 @@ function sendMessage(e) {
  * rimozione dell'utente dal canale e rimozione del canale dalla piattaforma
  */
 function showChannels() {
-
     //aggiunta canali
     db.ref('channels/').on("child_added", (snapshot) => {
         var channel = snapshot.val();
-
         db.ref(`channels/${channel.name}/users/`).on("child_added", (snapshot1) => {
 
             if (currentUser == snapshot1.val()) {
-                const aChannel = channel.name;
+
 
                 const aChannelsSection = `<a id="${channel.name}Channel" href="#" class="list-group-item list-group-item-action btn-group dropend" onclick="selectChannel('${channel.name}')">${channel.name}</a>`;
 
@@ -228,7 +237,7 @@ function showChannels() {
                 document.getElementById("channelschat-section").innerHTML += divSectionChat;
 
                 //ascolto quando arrivano nuovi messaggi
-                db.ref(`channels/${aChannel}/messages/`).on("child_added", (snapshot2) => {
+                db.ref(`channels/${channel.name}/messages/`).on("child_added", (snapshot2) => {
                     var width = document.getElementById("channel-section").style.width;
                     const messages = snapshot2.val();
                     console.log(messages);
@@ -236,17 +245,19 @@ function showChannels() {
                     var message = `<div class=${currentUser === messages.name ? "sent" : "receive"} style="word-wrap: break-word;" id='${messages.time}'>`;
 
                     message += `<div><b>${messages.name}: </b>${messages.message}</div>`;
-                    message += `<div onclick="deleteMessage(${messages.time})">delete</div>`;
+                    if (currentUserIsAdmin) {
+                        message += `<div><a onclick="deleteMessage('${channel.name}','${messages.time}')" href="#"><img src="./img/trash-fill.svg" alt="delete"></a></div>`;
+                    }
                     message += `</div>`;
 
                     // append the message on the page
-                    document.getElementById(aChannel).innerHTML += message;
+                    document.getElementById(channel.name).innerHTML += message;
 
-                    var scroll = document.getElementById(aChannel);
+                    var scroll = document.getElementById(channel.name);
                     scroll.scrollTop = scroll.scrollHeight;
 
                 });
-                db.ref(`channels/${aChannel}/messages/`).on("child_removed", (snapshot2) => {
+                db.ref(`channels/${channel.name}/messages/`).on("child_removed", (snapshot2) => {
                     var messageDeleted = snapshot2.val();
                     document.getElementById(messageDeleted.time).remove();
                 });
@@ -255,8 +266,6 @@ function showChannels() {
 
         //ascolto quando un utente viene rimosso dal gruppo
         db.ref(`channels/${channel.name}/users/`).on("child_removed", (snapshot1) => {
-            console.log(snapshot1.val());
-
             if (currentUser == snapshot1.val()) {
                 //il canale che l'utente viene rimosso, viene rimosso nella lista
                 document.getElementById(channel.name + "Channel").remove();
@@ -295,9 +304,9 @@ function selectChannel(channel) {
     } else {
         if (currentChannel != null) {
             document.getElementById(currentChannel).style.display = "none";
-        }else{
-			document.getElementById("message-form").style.display = "block";
-		}
+        } else {
+            document.getElementById("message-form").style.display = "block";
+        }
     }
     currentChannel = channel;
     document.getElementById(currentChannel).style.display = "block";
@@ -320,6 +329,7 @@ function selectChannel(channel) {
 function infoChannelSection() {
     db.ref(`channels/${currentChannel}/users/`).on('value', (snapshot) => {
         document.getElementById("list-user-channel").innerHTML = "";
+        document.getElementById("changeIsDone").innerHTML = "";
 
         var users = snapshot.val();
 
@@ -336,15 +346,20 @@ function infoChannelSection() {
             }
         }
     });
+    db.ref(`channels/${currentChannel}/durationMessage`).once('value', (snapshot) => {
+        document.getElementById("durationMessage").value = snapshot.val();
+    });
 }
-
-
 
 //#endregion
 
 //#region comandi per amministratori (ulteriore controllo se è amministratore)
 
+//per interfaccia
 function createChannelSection() {
+    if(!currentUserIsAdmin){
+        return;
+    }
     document.getElementById("createChannelError").innerHTML = "";
     document.getElementById("list-user").innerHTML = "";
 
@@ -360,7 +375,6 @@ function createChannelSection() {
         listUsers.sort();
         console.log(listUsers);
 
-
         for (element of listUsers) {
             if (element != currentUser) {
                 var aUser = `<input type="checkbox" name="user" id="${element}User" value="${element}"><label for="${element}User"> ${element}</label><br>`;
@@ -370,17 +384,28 @@ function createChannelSection() {
     });
 }
 
+//crea il canale
 function createChannel() {
+    if(!currentUserIsAdmin){
+        return;
+    }
     //controlli
     document.getElementById("createChannelError").innerHTML = "";
+
     var nameChannel = document.getElementById("name-channel").value.trim();
+    var durationMessage = parseInt(document.getElementById("durationMessage-channel").value);
 
     if (nameChannel === '') {
-		document.getElementById("createChannelError").innerHTML += "Channel name should not be empty";
+        document.getElementById("createChannelError").innerHTML = "Channel name should not be empty";
         return;
     }
     if (nameChannel.length > 20) {
-        document.getElementById("createChannelError").innerHTML += "Maximum 20 characters!<br>";
+        document.getElementById("createChannelError").innerHTML = "Maximum 20 characters!<br>";
+        return;
+    }
+
+    if (durationMessage == "" || parseInt(durationMessage) <= 0) {
+        document.getElementById("createChannelError").innerHTML = "Duration message is not valid.<br>";
         return;
     }
 
@@ -390,6 +415,7 @@ function createChannel() {
 
     //inserisci anche utente corrente (creatore gruppo)
     usersSelected.push(currentUser);
+
     Array.from(users).forEach(input => {
         if (input.checked) {
             usersSelected.push(input.value);
@@ -404,169 +430,223 @@ function createChannel() {
     db.ref('channels/' + nameChannel).set({
         name: nameChannel,
         users: usersSelected,
+        durationMessage: durationMessage
     });
     document.getElementById("name-channel").value = "";
+
+    document.getElementById("durationMessage-channel").value = "";
     $("#createChannel").modal('hide'); //chiude modal
 }
 
 function deleteChannel() {
-    db.ref('channels/' + currentChannel).remove();
-    $("#deleteChannel").modal('hide'); //chiude modal
+    if(currentUserIsAdmin){
+        db.ref('channels/' + currentChannel).remove();
+        $("#deleteChannel").modal('hide'); //chiude modal
+    }
+    
 }
 
-/**
- * Prende la lista utenti nel gruppo e la lista utenti nella piattaforma
- * e poi filtrare, così da rimanere solo utenti che non fanno parte di quel gruppo
- * e far visualizzare la lista sull'interfaccia
- */
+// mette la lista degli utenti che non fa parte di quel gruppo
 function addUserList() {
-    db.ref(`channels/${currentChannel}/users/`).once('value', (snapshot1) => {
-        document.getElementById("list-addUser").innerHTML = "";
-        //ottieni la lista degli utenti del gruppo
-        var groupUsers = snapshot1.val();
-        db.ref('users/').once('value', (snapshot2) => {
+    if (currentUserIsAdmin) {
+        db.ref(`channels/${currentChannel}/users/`).once('value', (snapshot1) => {
+            document.getElementById("list-addUser").innerHTML = "";
+            //ottieni la lista degli utenti del gruppo
+            var groupUsers = snapshot1.val();
 
-            //ottieni la lista degli utenti della piattaforma
-            var listUsers = [];
-            snapshot2.forEach((item) => {
-                var itemVal = item.val();
-                listUsers.push(itemVal['username']);
-            });
-            listUsers.sort();
-            console.log(listUsers);
+            db.ref('users/').once('value', (snapshot2) => {
 
-            //filtra utenti
-            listUsers = listUsers.filter(function (item) {
-                return !groupUsers.includes(item);
-            });
-            console.log(listUsers);
+                //ottieni la lista degli utenti della piattaforma
+                var listUsers = [];
+                snapshot2.forEach((item) => {
+                    var itemVal = item.val();
+                    listUsers.push(itemVal['username']);
+                });
+                listUsers.sort();
+                console.log(listUsers);
 
-            for (element of listUsers) {
-                if (currentUser != element) {
-                    var aUser = `<input type="checkbox" name="user" id="${element}" value="${element}"><label for="${element}"> ${element}</label><br>`;
+                //filtra utenti
+                listUsers = listUsers.filter(function (item) {
+                    return !groupUsers.includes(item);
+                });
+                console.log(listUsers);
+
+                for (element of listUsers) {
+                    if (currentUser != element) {
+                        var aUser = `<input type="checkbox" name="user" id="${element}" value="${element}"><label for="${element}"> ${element}</label><br>`;
+                    }
+                    document.getElementById("list-addUser").innerHTML += aUser;
                 }
-                document.getElementById("list-addUser").innerHTML += aUser;
-            }
+            });
         });
-    });
+    }
 }
 
 function addUser() {
-    usersSelected = [];
-    var users = document.getElementById("list-addUser").children;
-
-    Array.from(users).forEach(input => {
-        if (input.checked) {
-            usersSelected.push(input.value);
-        }
-    });
-
-    db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
-        db.ref('channels/' + currentChannel).update({
-            users: snapshot.val().concat(usersSelected)
+    if (currentUserIsAdmin) {
+        usersSelected = [];
+        var users = document.getElementById("list-addUser").children;
+        Array.from(users).forEach(input => {
+            if (input.checked) {
+                usersSelected.push(input.value);
+            }
         });
-    });
 
-    $("#addUser").modal('hide'); //chiude modal
+        db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
+            db.ref('channels/' + currentChannel).update({
+                users: snapshot.val().concat(usersSelected)
+            });
+        });
+        $("#addUser").modal('hide'); //chiude modal
+    }
 }
 
 function removeUser(user) {
-    db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
-        console.log(user);
-        var supp;
-        var userRemove = snapshot.val();
-        console.log(userRemove);
+    if (currentUserIsAdmin) {
+        db.ref(`channels/${currentChannel}/users`).once('value', (snapshot) => {
+            console.log(user);
+            var supp;
+            var userRemove = snapshot.val();
+            console.log(userRemove);
 
-        var index = userRemove.indexOf(user);
-        supp = userRemove[index];
-        userRemove[index] = userRemove[userRemove.length - 1];
-        userRemove[userRemove.length - 1] = supp;
+            var index = userRemove.indexOf(user);
+            supp = userRemove[index];
+            userRemove[index] = userRemove[userRemove.length - 1];
+            userRemove[userRemove.length - 1] = supp;
 
-        db.ref('channels/' + currentChannel).update({
-            users: userRemove
+            db.ref('channels/' + currentChannel).update({
+                users: userRemove
+            });
+
+            userRemove.splice(userRemove.length - 1, 1);
+            console.log(userRemove);
+
+            db.ref('channels/' + currentChannel).update({
+                users: userRemove
+            });
         });
-
-        userRemove.splice(userRemove.length - 1, 1);
-        console.log(userRemove);
-
-        db.ref('channels/' + currentChannel).update({
-            users: userRemove
-        });
-    });
+    }
 }
 
-function deleteMessage(timestampMessage) {
-    $("#deleteMessage").modal('show'); //mostra modal
+function deleteMessage(channel, timestampMessage) {
+    if (currentUserIsAdmin) {
 
-    $(".btnDeleteMessage").click(function () {
-        db.ref(`channels/${currentChannel}/messages/${timestampMessage}`).remove();
-        $("#deleteMessage").modal('hide');
-    });
 
-    console.log("messaggio eliminato");
+        $("#deleteMessage").modal('show'); //mostra modal
+
+        $(".btnDeleteMessage").click(function () {
+            db.ref(`channels/${channel}/messages/${timestampMessage}`).remove();
+            console.log("messaggio eliminato");
+            $("#deleteMessage").modal('hide');
+        });
+    }
+
 }
 
 function broadcastMessage() {
-    // get values to be submitted
-    const timestamp = Date.now();
-    const messageInput = document.getElementById("broadcastMessage");
-    const message = messageInput.value.trim();
-    if (message == "") {
-        return;
-    }
-    // clear the input box
-    messageInput.value = "";
-
-    db.ref('channels/').once("value", (snapshot) => {
-        for (channel of Object.values(snapshot.val())) {
-            if (channel.users.indexOf(currentUser) != -1) {
-                var channelMessage = `channels/${channel.name}/messages/`;
-                db.ref(channelMessage + timestamp).set({
-                    name: currentUser,
-                    message: message,
-                });
-            }
+    if (currentUserIsAdmin) {
+        // get values to be submitted
+        const timestamp = Date.now();
+        const messageInput = document.getElementById("broadcastMessage");
+        const message = messageInput.value.trim();
+        if (message == "") {
+            return;
         }
-    });
+        // clear the input box
+        messageInput.value = "";
+
+        db.ref('channels/').once("value", (snapshot) => {
+            for (channel of Object.values(snapshot.val())) {
+                if (channel.users.indexOf(currentUser) != -1) {
+                    var channelMessage = `channels/${channel.name}/messages/`;
+                    db.ref(channelMessage + timestamp).set({
+                        name: currentUser,
+                        message: message,
+                    });
+                }
+            }
+        });
+    }
 }
 
 function listBanUsers() {
-    const listBanUsers = document.getElementById("list-banUsers");
-    listBanUsers.innerHTML = "<option value=''></option>";
-    db.ref('users/').once('value', (snapshot) => {
-        var listUsers = Object.values(snapshot.val());
-
-        for (user of listUsers) {
-            listBanUsers.innerHTML += `<option value="${user.email}">${user.username}</option>`;
-        }
-    });
+    if (currentUserIsAdmin) {
+        const listBanUsers = document.getElementById("list-banUsers");
+        listBanUsers.innerHTML = "<option value=''></option>";
+        db.ref('users/').once('value', (snapshot) => {
+            var listUsers = Object.values(snapshot.val());
+            for (user of listUsers) {
+                listBanUsers.innerHTML += `<option value="${user.email}">${user.username}</option>`;
+            }
+        });
+    }
 }
 
 function banUser() {
     if (currentUserIsAdmin) {
-        document.getElementById("banError").innerHTML = "";
-        var email = document.getElementById("list-banUsers").value;
-        var reason = (document.getElementById("reason").value).trim();
-        var period = document.getElementById("period").value;
+        db.ref('ban/').once('value', (snapshot) => {
+            document.getElementById("banError").innerHTML = "";
+            var email = document.getElementById("list-banUsers").value;
+            var reason = (document.getElementById("reason").value).trim();
+            var period = document.getElementById("period").value;
 
-        if (email == "") {
-            document.getElementById("banError").innerHTML = "Select a user.";
-			return;
-        }
-        if (reason == "") {
-            document.getElementById("banError").innerHTML = "You should write a reason";
-			return;
-        }
-        if (period == "" || parseInt(period) <= 0) {
-            document.getElementById("banError").innerHTML = "The period value is not valid";
-			return;
-        }
-        var endBan = Date.now() + parseInt(period) * 3600 * 1000;
+            if (email == "") {
+                document.getElementById("banError").innerHTML = "Select a user.";
+                return;
+            }
+            if (reason == "") {
+                document.getElementById("banError").innerHTML = "You should write a reason";
+                return;
+            }
+            if (period == "" || parseInt(period) <= 0) {
+                document.getElementById("banError").innerHTML = "The period value is not valid";
+                return;
+            }
 
-        db.ref('ban/').push({
-            email: email,
-            reason: reason,
-            endBan: endBan
+            for (userBanned of Object.values(snapshot.val())) {
+                console.log(userBanned);
+                if (userBanned.email == email) {
+                    document.getElementById("banError").innerHTML = "This user is already banned.";
+                    return;
+                }
+            }
+            var endBan = Date.now() + parseInt(period) * 3600 * 1000;
+
+            db.ref('ban/').push({
+                email: email,
+                reason: reason,
+                endBan: endBan
+            });
+        });
+        $("#ban").modal('hide');
+    }
+}
+
+function changeDurationMessage() {
+    if (currentUserIsAdmin) {
+        document.getElementById("changeIsDone").innerHTML = ""
+        var durationMessage = document.getElementById("durationMessage").value;
+        if (durationMessage == "" || parseInt(durationMessage) <= 0) {
+            return;
+        }
+        db.ref('channels/' + currentChannel).update({
+            durationMessage: durationMessage
+        });
+        document.getElementById("changeIsDone").innerHTML = "The duration message has changed!";
+    }
+}
+
+function deleteOldMessage() {
+    if (currentUserIsAdmin) {
+        db.ref(`channels/${currentChannel}/`).once('value', (snapshot) => {
+
+            var duration = ((snapshot.val()).durationMessage) * 3600 * 1000;
+            for (message of Object.values((snapshot.val()).messages)) {
+                if (Date.now() >= (duration + message.time)) {
+                    db.ref(`channels/${currentChannel}/messages/${message.time}`).remove();
+                }
+            }
+            document.getElementById("changeIsDone").innerHTML = "Old messages have been deleted"
         });
     }
 }

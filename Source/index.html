@@ -77,12 +77,14 @@
                                 <input placeholder="Password" type="password" id="password"
                                     class="form-control form-control-lg" />
                             </div>
-                            <div id="errorLogin" style="color: red;">
-
-                            </div><br>
+                            <br>
 
                             <button class="btn btn-dark btn-lg btn-block" onclick="loginUser()">Login</button>
                             <br>
+                            <br>
+                            <div id="errorLogin" style="color: red;">
+
+                            </div>
                             <br>
                             <div>
                                 <p class="mb-0">Don't you have an account? <a href="register.html"
@@ -151,10 +153,14 @@
                     <input placeholder="Channel name" id="name-channel">
                     <br><br>
                     Users:
-                    <div id="list-user" style="height: 200px; overflow-y: scroll;">
+                    <div id="list-user" style="max-height: 500px; overflow-y: scroll;">
 
                     </div>
                     <br>
+
+                    Duration of message (hours):
+                    <input type="number" class="form-control" id="durationMessage-channel">
+                    
                     <div id="createChannelError" style="color:red;">
 
                     </div>
@@ -176,18 +182,27 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <a name="admin-mode" href="#" data-bs-toggle="modal" data-bs-target="#changeName" >Change the channel name</a>
-                    <br>
                     Users:
                     <ul id="list-user-channel" style="max-height: 500px; overflow-y: scroll;">
 
                     </ul>
                     <br>
-                    
+                    Duration of message (hours):
+                    <input type="number" class="form-control" id="durationMessage" style="margin-bottom: 5px;">
+                    <button class="btn btn-dark" style="margin-bottom: 5px;" onclick="changeDurationMessage()">Change duration message</button>
+
+                    <button name="admin-mode" type="button" class="btn btn-dark" onclick="deleteOldMessage()" style="display: none;">Delete old messages</button>
+
+                    <div id="changeIsDone"> 
+
+                    </div>
                 </div>
                 <div class="modal-footer">
+
                     <button name="admin-mode" type="button" class="btn btn-dark" onclick="addUserList()" 
-                    data-bs-toggle="modal" data-bs-target="#addUser" style="display: none;">Add a user</button>
+                    data-bs-toggle="modal" data-bs-target="#addUser" style="display: none;">Add users</button>
+
+
                     <button name="admin-mode" type="button" class="btn btn-danger"
                         data-bs-toggle="modal" data-bs-target="#deleteChannel" style="display: none;">Delete this channel</button>
                 </div>
